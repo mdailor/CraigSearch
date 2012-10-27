@@ -72,7 +72,7 @@ namespace CraigSearch
 
         private void btnConfigSave_Click(object sender, EventArgs e)
         {
-            DialogResult = DialogResult.Yes;
+            DialogResult = DialogResult.OK;
 
             Configuration config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
             config.AppSettings.Settings["SearchKeywords"].Value = tbKeywords.Text;
@@ -91,7 +91,7 @@ namespace CraigSearch
 
         private void btnConfigCancel_Click(object sender, EventArgs e)
         {
-            DialogResult = DialogResult.No;
+            DialogResult = DialogResult.Cancel;
         }
 
         private void cbCategories_SelectionChanged(object sender, EventArgs e)

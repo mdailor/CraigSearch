@@ -1,10 +1,10 @@
 This app will allow you to search all US Craigslist cites with one click.
 
-I have been job hunting on Craigslist for the past few weeks, and the process of crawling through the listings one city at a time, day after day, looking for "remote" and "telecommute" software developer gigs across the entire US was quickly becoming way more work than a full-time job, so I wrote this Windows app to do the work for me. It will plow through all Craigslist locations (there are currently 415 of them, Auburn, AL -> Wyoming, WY) in about 4 minutes and return a single compiled list of jobs. I had originally intended to leave it at that, but when I told my wife about it she asked "can it search for shoes?", so... I'm sure you can guess the rest.
+I have been job hunting on Craigslist for the past few weeks, and the process of crawling through the listings one city at a time, day after day, looking for "remote" and "telecommute" software developer gigs across the entire US was quickly becoming way more work than a full-time job, so I wrote this Windows app to do the work for me. It will plow through all Craigslist locations (there are currently 415 of them, Auburn, AL -> Wyoming, WY) in less than a minute and return a single compiled list of jobs. I had originally intended to leave it at that, but when I told my wife about it she asked "can it search for shoes?", so... I'm sure you can guess the rest.
 
 While waiting for responses to my job applications (still looking, sadly), here are a few more things that I will likely do before I put this down:
 
 o Add search parameters to better cozy up to what's available on Craigslist (min/max rent $ when searching housing, for example).
 o Include a $ amount in results when searching monetized content (for sale, jobs, etc.)
-o Include a photo in results if that's important to the user.
+o Include a photo in results if that's important to the user (this apparently IS quite important for shoe shopping!).
 o Add support for searching the personals; wasn't a priority here in happily-married land. :)

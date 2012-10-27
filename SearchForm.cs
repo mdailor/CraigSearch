@@ -107,14 +107,17 @@ namespace CraigSearch
             this.Close();
         }
 
-        private void menuConfig_Clicked(object sender, EventArgs e)
-        {
-            ConfigDialog dlgConfig = new ConfigDialog(m_alAllLocations, m_alAllCategories, m_alAllSubcategories);
-            dlgConfig.ShowDialog();
-        }
-
         private void menuSearchStart_Clicked(object sender, EventArgs e)
         {
+            // Display the config dialog and let the user set up the search parameters
+            //
+            ConfigDialog dlgConfig = new ConfigDialog(m_alAllLocations, m_alAllCategories, m_alAllSubcategories);
+            DialogResult drResult = dlgConfig.ShowDialog();
+            if (drResult == DialogResult.Cancel)
+                return;
+
+            // Set up variables used to communicate with the search threads
+            //
             m_bSearchInProgress = true;
             m_bConnectionTimeoutError = false;
             m_bSearchCompleted = false;
@@ -135,7 +138,7 @@ namespace CraigSearch
                         m_asiSearchList[iThreadIndex].Locations.Add(m_alAllLocations[iLocationIndexAll++]);
                 }
 
-                Thread thread = new Thread(DoSearchThread);
+                Thread thread = new Thread(StartSearchThread);
                 thread.Start(m_asiSearchList[iThreadIndex]);
             }
         }
@@ -234,12 +237,11 @@ namespace CraigSearch
 
         private void EnableMenuItems()
         {
-            searchToolStripMenuItem.DropDownItems["searchSettingsToolStripMenuItem"].Enabled = !m_bSearchInProgress;
             searchToolStripMenuItem.DropDownItems["searchStartToolStripMenuItem"].Enabled = !m_bSearchInProgress;
             searchToolStripMenuItem.DropDownItems["searchStopToolStripMenuItem"].Enabled = m_bSearchInProgress;
         }
 
-        private void DoSearchThread(Object objSearch)
+        private void StartSearchThread(Object objSearch)
         {
             SearchLocationList((SearchInfo)objSearch);
         }
@@ -427,7 +429,7 @@ namespace CraigSearch
 
                 // Output the city/state/result count header for this location
                 //
-                siSearch.HTMLSearchResults += "<tr><td colspan=\"2\"><h4 class=\"ban\" style=\"text-align:left;\"><a href=\"" + liLocation.URL + "\" target=\"_blank\">" + liLocation.City.ToUpper() + ", " + liLocation.State.ToUpper() + "</a>: " + alResults.Count.ToString() + " item(s)</h4></td></tr>\r\n";
+                siSearch.HTMLSearchResults += "<tr><td colspan=\"2\"><h4 class=\"ban\" style=\"text-align:left;\"><a href=\"" + liLocation.URL + "\" target=\"_blank\">" + liLocation.State.ToUpper() + ": " + liLocation.City.ToUpper() + "</a>: " + alResults.Count.ToString() + " item(s)</h4></td></tr>\r\n";
 
                 // Output the result lines
                 //
@@ -439,7 +441,9 @@ namespace CraigSearch
                     siSearch.HTMLSearchResults += "</tr>\r\n";
                     ++siSearch.ResultCount;
                 }
+                siSearch.HTMLSearchResults += "<tr><td>&nbsp;</td><td>&nbsp;</td></tr>\r\n";
             }
+
             siSearch.HTMLSearchResults += "</table>\r\n";
 
             // Signal to the UI thread that we're done

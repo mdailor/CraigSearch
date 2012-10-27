@@ -57,7 +57,7 @@
             this.btnConfigSave.Name = "btnConfigSave";
             this.btnConfigSave.Size = new System.Drawing.Size(75, 29);
             this.btnConfigSave.TabIndex = 0;
-            this.btnConfigSave.Text = "Save";
+            this.btnConfigSave.Text = "Ok";
             this.btnConfigSave.UseVisualStyleBackColor = true;
             this.btnConfigSave.Click += new System.EventHandler(this.btnConfigSave_Click);
             // 
@@ -140,7 +140,7 @@
             // cbPartTime
             // 
             this.cbPartTime.AutoSize = true;
-            this.cbPartTime.Location = new System.Drawing.Point(339, 107);
+            this.cbPartTime.Location = new System.Drawing.Point(335, 107);
             this.cbPartTime.Name = "cbPartTime";
             this.cbPartTime.Size = new System.Drawing.Size(86, 21);
             this.cbPartTime.TabIndex = 13;
@@ -208,7 +208,7 @@
             // cbContract
             // 
             this.cbContract.AutoSize = true;
-            this.cbContract.Location = new System.Drawing.Point(339, 80);
+            this.cbContract.Location = new System.Drawing.Point(335, 80);
             this.cbContract.Name = "cbContract";
             this.cbContract.Size = new System.Drawing.Size(83, 21);
             this.cbContract.TabIndex = 11;
@@ -239,7 +239,7 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1010, 180);
+            this.ClientSize = new System.Drawing.Size(645, 180);
             this.ControlBox = false;
             this.Controls.Add(this.panel1);
             this.Controls.Add(this.label1);
