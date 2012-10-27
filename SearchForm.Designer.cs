@@ -32,9 +32,8 @@
             this.fileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.exitToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.searchToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.settingsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.searchTestToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.searchNowToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.searchSettingsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.searchStartToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.searchStopToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.webBrowser = new System.Windows.Forms.WebBrowser();
             this.menuStrip1.SuspendLayout();
@@ -69,41 +68,33 @@
             // searchToolStripMenuItem
             // 
             this.searchToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.settingsToolStripMenuItem,
-            this.searchTestToolStripMenuItem,
-            this.searchNowToolStripMenuItem,
+            this.searchSettingsToolStripMenuItem,
+            this.searchStartToolStripMenuItem,
             this.searchStopToolStripMenuItem});
             this.searchToolStripMenuItem.Name = "searchToolStripMenuItem";
             this.searchToolStripMenuItem.Size = new System.Drawing.Size(65, 24);
             this.searchToolStripMenuItem.Text = "Search";
             // 
-            // settingsToolStripMenuItem
+            // searchSettingsToolStripMenuItem
             // 
-            this.settingsToolStripMenuItem.Name = "settingsToolStripMenuItem";
-            this.settingsToolStripMenuItem.Size = new System.Drawing.Size(316, 24);
-            this.settingsToolStripMenuItem.Text = "Settings...";
-            this.settingsToolStripMenuItem.Click += new System.EventHandler(this.menuConfig_Clicked);
+            this.searchSettingsToolStripMenuItem.Name = "searchSettingsToolStripMenuItem";
+            this.searchSettingsToolStripMenuItem.Size = new System.Drawing.Size(155, 24);
+            this.searchSettingsToolStripMenuItem.Text = "Settings...";
+            this.searchSettingsToolStripMenuItem.Click += new System.EventHandler(this.menuConfig_Clicked);
             // 
-            // searchTestToolStripMenuItem
+            // searchStartToolStripMenuItem
             // 
-            this.searchTestToolStripMenuItem.Name = "searchTestToolStripMenuItem";
-            this.searchTestToolStripMenuItem.Size = new System.Drawing.Size(316, 24);
-            this.searchTestToolStripMenuItem.Text = "Start quick test search (10 locations)";
-            this.searchTestToolStripMenuItem.Click += new System.EventHandler(this.menuTestSearch_Clicked);
-            // 
-            // searchNowToolStripMenuItem
-            // 
-            this.searchNowToolStripMenuItem.Name = "searchNowToolStripMenuItem";
-            this.searchNowToolStripMenuItem.Size = new System.Drawing.Size(316, 24);
-            this.searchNowToolStripMenuItem.Text = "Start full search (all locations)";
-            this.searchNowToolStripMenuItem.Click += new System.EventHandler(this.menuSearch_Clicked);
+            this.searchStartToolStripMenuItem.Name = "searchStartToolStripMenuItem";
+            this.searchStartToolStripMenuItem.Size = new System.Drawing.Size(155, 24);
+            this.searchStartToolStripMenuItem.Text = "Start search";
+            this.searchStartToolStripMenuItem.Click += new System.EventHandler(this.menuSearchStart_Clicked);
             // 
             // searchStopToolStripMenuItem
             // 
             this.searchStopToolStripMenuItem.Name = "searchStopToolStripMenuItem";
-            this.searchStopToolStripMenuItem.Size = new System.Drawing.Size(316, 24);
+            this.searchStopToolStripMenuItem.Size = new System.Drawing.Size(155, 24);
             this.searchStopToolStripMenuItem.Text = "Stop search";
-            this.searchStopToolStripMenuItem.Click += new System.EventHandler(this.menuStopSearch_Clicked);
+            this.searchStopToolStripMenuItem.Click += new System.EventHandler(this.menuSearchStop_Clicked);
             // 
             // webBrowser
             // 
@@ -139,9 +130,8 @@
         private System.Windows.Forms.ToolStripMenuItem exitToolStripMenuItem;
         private System.Windows.Forms.WebBrowser webBrowser;
         private System.Windows.Forms.ToolStripMenuItem searchToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem settingsToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem searchNowToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem searchTestToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem searchSettingsToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem searchStartToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem searchStopToolStripMenuItem;
     }
 }

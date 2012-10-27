@@ -30,16 +30,26 @@ namespace CraigSearch
         string m_sHTMLSearchResults = "";
         System.Windows.Forms.Timer m_tmrUIUpdateTimer = null;
 
+        // Search thread variables
+        //
+        // Test search execution times for "all software telecommute jobs":
+        // 1 thread:   4:25
+        // 4 threads:  1:15
+        // 6 threads:  1.01
+        // 8 threads:  0:55
+        // 12 threads: 0:55
+        //
+        static int m_iMaxThreads = 8;   // Create this many search threads
+        SearchInfo[] m_asiSearchList = new SearchInfo[m_iMaxThreads];
+        int m_iCurrentSearchIndex = 0;
+
         public SearchForm()
         {
             InitializeComponent();
             
-            // initialize menu items
+            // Initialize menu items
             //
-            searchToolStripMenuItem.DropDownItems["settingsToolStripMenuItem"].Enabled = true;
-            searchToolStripMenuItem.DropDownItems["searchTestToolStripMenuItem"].Enabled = true;
-            searchToolStripMenuItem.DropDownItems["searchNowToolStripMenuItem"].Enabled = true;
-            searchToolStripMenuItem.DropDownItems["searchStopToolStripMenuItem"].Enabled = false;
+            EnableMenuItems();
 
             // Get the list of all US Craigslist cities
             //
@@ -103,30 +113,34 @@ namespace CraigSearch
             dlgConfig.ShowDialog();
         }
 
-        private void menuTestSearch_Clicked(object sender, EventArgs e)
+        private void menuSearchStart_Clicked(object sender, EventArgs e)
         {
-            searchToolStripMenuItem.DropDownItems["settingsToolStripMenuItem"].Enabled = false;
-            searchToolStripMenuItem.DropDownItems["searchTestToolStripMenuItem"].Enabled = false;
-            searchToolStripMenuItem.DropDownItems["searchNowToolStripMenuItem"].Enabled = false;
-            searchToolStripMenuItem.DropDownItems["searchStopToolStripMenuItem"].Enabled = true;
-            Thread thread = new Thread(new ThreadStart(DoTestSearchThread));
-            thread.Start();
-        }
+            m_bSearchInProgress = true;
+            m_bConnectionTimeoutError = false;
+            m_bSearchCompleted = false;
+            m_bUserStopRequested = false;
+            m_sHTMLSearchResults = "";
+            EnableMenuItems();
 
-        private void menuSearch_Clicked(object sender, EventArgs e)
-        {
-            foreach (ToolStripMenuItem toolItem in searchToolStripMenuItem.DropDownItems)
+            // We will start multiple search threads here and assign each one to its own range of the location list
+            //
+            int iMaxLocationsPerThread = m_alAllLocations.Count / m_iMaxThreads;
+            int iLocationIndexAll = 0;
+            for (int iThreadIndex = 0; iThreadIndex < m_iMaxThreads; iThreadIndex++)
             {
-                searchToolStripMenuItem.DropDownItems["settingsToolStripMenuItem"].Enabled = false;
-                searchToolStripMenuItem.DropDownItems["searchTestToolStripMenuItem"].Enabled = false;
-                searchToolStripMenuItem.DropDownItems["searchNowToolStripMenuItem"].Enabled = false;
-                searchToolStripMenuItem.DropDownItems["searchStopToolStripMenuItem"].Enabled = true;
+                m_asiSearchList[iThreadIndex] = new SearchInfo();
+                for (int i = 0; i < iMaxLocationsPerThread; i++)
+                {
+                    if (iLocationIndexAll < m_alAllLocations.Count)
+                        m_asiSearchList[iThreadIndex].Locations.Add(m_alAllLocations[iLocationIndexAll++]);
+                }
+
+                Thread thread = new Thread(DoSearchThread);
+                thread.Start(m_asiSearchList[iThreadIndex]);
             }
-            Thread thread = new Thread(new ThreadStart(DoFullSearchThread));
-            thread.Start();
         }
 
-        private void menuStopSearch_Clicked(object sender, EventArgs e)
+        private void menuSearchStop_Clicked(object sender, EventArgs e)
         {
             // Signal the search thread to stop
             //
@@ -137,7 +151,32 @@ namespace CraigSearch
         {
             // Set the titlebar text to reflect our current state
             //
-            this.Text = m_sSearchProgressMessage;
+            if (m_bSearchInProgress)
+            {
+                // Compile totals for all of the search threads
+                //
+                int iLocationCount = 0;
+                int iSearchResultCount = 0;
+                int iCompletedCount = 0;
+                for (int i = 0; i < m_iMaxThreads; i++)
+                {
+                    iLocationCount += m_asiSearchList[i].CurrentLocationNumber;
+                    iSearchResultCount += m_asiSearchList[i].ResultCount;
+                    if (m_asiSearchList[i].SearchCompleted)
+                        ++iCompletedCount;
+                }
+                string sSearchProgressMessage = "Searching " + m_asiSearchList[m_iCurrentSearchIndex].CurrentLocationName;
+                sSearchProgressMessage += " (" + iLocationCount.ToString() + " of " + m_alAllLocations.Count.ToString() + " locations, " + iSearchResultCount.ToString() + " found)";
+                this.Text = sSearchProgressMessage;
+
+                if (++m_iCurrentSearchIndex == m_iMaxThreads)
+                    m_iCurrentSearchIndex = 0;
+
+                // If all threads have completed their search, we're done.
+                //
+                if (iCompletedCount == m_iMaxThreads)
+                    m_bSearchCompleted = true;
+            }
 
             // Notify the user if we are having trouble
             //
@@ -156,22 +195,53 @@ namespace CraigSearch
                 m_bSearchInProgress = false;
                 m_bSearchCompleted = false;
                 this.Text = m_sSearchProgressMessage;
+                EnableMenuItems();
+                
+                // Set up the output document header (this is not specifically the HTML <head></head>, but rather the "static" first portion of our output)
+                //
+                m_sHTMLSearchResults = "";
+                m_sHTMLSearchResults += "<!DOCTYPE html PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\">\r\n";
+                m_sHTMLSearchResults += "<html>\r\n";
+                m_sHTMLSearchResults += "<head>\r\n";
+                m_sHTMLSearchResults += "<link type=\"text/css\" rel=\"stylesheet\" media=\"all\" href=\"http://www.craigslist.org/styles/craigslist.css?v=a64eefe319b8a553ddf0df3549209610\">\r\n";
+                m_sHTMLSearchResults += "</head>\r\n";
+                m_sHTMLSearchResults += "<body>\r\n";
+
+                // Append the search results HTML to the document
+                //
+                int iLocationCount = 0;
+                int iSearchResultCount = 0;
+                for (int i = 0; i < m_iMaxThreads; i++)
+                {
+                    iLocationCount += m_asiSearchList[i].CurrentLocationNumber;
+                    iSearchResultCount += m_asiSearchList[i].ResultCount;
+                    m_sHTMLSearchResults += m_asiSearchList[i].HTMLSearchResults;
+                }
+
+                // Finish the document
+                //
+                m_sHTMLSearchResults += "</body>\r\n";
+
+                // Display the document
+                //
                 webBrowser.DocumentText = m_sHTMLSearchResults;
-                searchToolStripMenuItem.DropDownItems["settingsToolStripMenuItem"].Enabled = true;
-                searchToolStripMenuItem.DropDownItems["searchTestToolStripMenuItem"].Enabled = true;
-                searchToolStripMenuItem.DropDownItems["searchNowToolStripMenuItem"].Enabled = true;
-                searchToolStripMenuItem.DropDownItems["searchStopToolStripMenuItem"].Enabled = false;
+
+                // Display the status in the titlebar
+                //
+                this.Text = "CraigSearch: Displaying " + iSearchResultCount.ToString() + " item(s) in " + (iLocationCount + 1).ToString() + " locations";
             }
         }
 
-        private void DoTestSearchThread()
+        private void EnableMenuItems()
         {
-            SearchLocationList(10);
+            searchToolStripMenuItem.DropDownItems["searchSettingsToolStripMenuItem"].Enabled = !m_bSearchInProgress;
+            searchToolStripMenuItem.DropDownItems["searchStartToolStripMenuItem"].Enabled = !m_bSearchInProgress;
+            searchToolStripMenuItem.DropDownItems["searchStopToolStripMenuItem"].Enabled = m_bSearchInProgress;
         }
 
-        private void DoFullSearchThread()
+        private void DoSearchThread(Object objSearch)
         {
-            SearchLocationList(m_alAllLocations.Count);
+            SearchLocationList((SearchInfo)objSearch);
         }
 
         private ArrayList GetLocationList()
@@ -326,33 +396,18 @@ namespace CraigSearch
             return (alSubcategories);
         }
 
-        private void SearchLocationList(int iLocationCount)
+        private void SearchLocationList(SearchInfo siSearch)
         {
-            // Tell the UI thread what we're up to
+            // Search each location in the list and append the results to our output HTML document
             //
-            m_bSearchInProgress = true;
-
-            // Search specified number of locations
-            //
-            int iLocationCounter = 0;
-            int iResultCounter = 0;
-            string sHTMLHeader = "";
-            sHTMLHeader += "<!DOCTYPE html PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\">\r\n";
-            sHTMLHeader += "<html>\r\n";
-            sHTMLHeader += "<head>\r\n";
-            sHTMLHeader += "<link type=\"text/css\" rel=\"stylesheet\" media=\"all\" href=\"http://www.craigslist.org/styles/craigslist.css?v=a64eefe319b8a553ddf0df3549209610\">\r\n";
-            sHTMLHeader += "</head>\r\n";
-            sHTMLHeader += "<body>\r\n";
-
-            string sHTMLBody = "";
-            sHTMLBody += "<table width=\"100%\">\r\n";
-            foreach (LocationInfo liLocation in m_alAllLocations)
+            siSearch.HTMLSearchResults = "";
+            siSearch.HTMLSearchResults += "<table width=\"100%\">\r\n";
+            foreach (LocationInfo liLocation in siSearch.Locations)
             {
                 // Get the search result list for this location
                 //
-                if (++iLocationCounter > iLocationCount)
-                    break;
-                m_sSearchProgressMessage = "Searching " + liLocation.State.ToUpper() + ": " + liLocation.City.ToUpper() + " (" + iLocationCounter.ToString() + " of " + iLocationCount.ToString() + " cities, " + iResultCounter.ToString() + " found)";
+                ++siSearch.CurrentLocationNumber;
+                siSearch.CurrentLocationName = liLocation.State.ToUpper() + ": " + liLocation.City.ToUpper();
                 ArrayList alResults = SearchLocation(liLocation);
 
                 // Stop if the user has requested us to do so
@@ -360,7 +415,7 @@ namespace CraigSearch
                 if (m_bUserStopRequested)
                     break;
 
-                // Stop if we are having connection issues after multiple attempts
+                // Stop if we are having connection issues after multiple attempts (this is set in SearchLocation())
                 //
                 if (m_bConnectionTimeoutError)
                     break;
@@ -370,33 +425,26 @@ namespace CraigSearch
                 if (alResults.Count == 0)
                     continue;
 
-                // Display the city/state/result count header for this location
+                // Output the city/state/result count header for this location
                 //
-                sHTMLBody += "<tr><td colspan=\"2\"><h4 class=\"ban\" style=\"text-align:left;\"><a href=\"" + liLocation.URL + "\" target=\"_blank\">" + liLocation.City.ToUpper() + ", " + liLocation.State.ToUpper() + "</a>: " + alResults.Count.ToString() + " item(s)</h4></td></tr>\r\n";
+                siSearch.HTMLSearchResults += "<tr><td colspan=\"2\"><h4 class=\"ban\" style=\"text-align:left;\"><a href=\"" + liLocation.URL + "\" target=\"_blank\">" + liLocation.City.ToUpper() + ", " + liLocation.State.ToUpper() + "</a>: " + alResults.Count.ToString() + " item(s)</h4></td></tr>\r\n";
 
-                // Display the results
+                // Output the result lines
                 //
                 foreach (SearchResultInfo srResult in alResults)
                 {
-                    sHTMLBody += "<tr>";
-                    sHTMLBody += "<td width=\"5%\" nowrap>" + srResult.Date + "</td>";
-                    sHTMLBody += "<td><a href=\"" + srResult.URL + "\" target=\"_blank\">" + srResult.Title + "</a></td>";
-                    sHTMLBody += "</tr>\r\n";
-                    ++iResultCounter;
+                    siSearch.HTMLSearchResults += "<tr>";
+                    siSearch.HTMLSearchResults += "<td width=\"5%\" nowrap>" + srResult.Date + "</td>";
+                    siSearch.HTMLSearchResults += "<td><a href=\"" + srResult.URL + "\" target=\"_blank\">" + srResult.Title + "</a></td>";
+                    siSearch.HTMLSearchResults += "</tr>\r\n";
+                    ++siSearch.ResultCount;
                 }
             }
-            sHTMLBody += "</table>\r\n";
-            sHTMLBody += "</body>\r\n";
+            siSearch.HTMLSearchResults += "</table>\r\n";
 
-            // Display the results
+            // Signal to the UI thread that we're done
             //
-            string sResultMessage = "Displaying " + iResultCounter.ToString() + " item(s) in " + (iLocationCounter - 1).ToString() + " cities";
-            m_sSearchProgressMessage = "CraigSearch: " + sResultMessage;
-            m_sHTMLSearchResults = sHTMLHeader + sResultMessage + "<br /><br />\r\n" + sHTMLBody;
-
-            // Signal to the UI thread that it's time to display the search results
-            //
-            m_bSearchCompleted = true;
+            siSearch.SearchCompleted = true;
         }
 
         private ArrayList SearchLocation(LocationInfo liLocation)
@@ -514,6 +562,7 @@ namespace CraigSearch
             //
             return (alResults);
         }
+
     }
 
     #region Data structure classes
@@ -640,6 +689,59 @@ namespace CraigSearch
             set { m_sURL = value; }
         }
     }
+
+    public class SearchInfo
+    {
+        private ArrayList m_alLocations = new ArrayList();
+        private int m_iCurrentLocationNumber = 0;
+        private string m_sCurrentLocationName = "";
+        private int m_iResultCount = 0;
+        private bool m_bSearchCompleted = false;
+        private string m_sHTMLSearchResults = "";
+
+        public SearchInfo() { }
+        public SearchInfo(ArrayList alLocations)
+        {
+            m_alLocations = alLocations;
+        }
+
+        public ArrayList Locations
+        {
+            get { return m_alLocations; }
+            set { m_alLocations = value; }
+        }
+
+        public int CurrentLocationNumber
+        {
+            get { return m_iCurrentLocationNumber; }
+            set { m_iCurrentLocationNumber = value; }
+        }
+
+        public string CurrentLocationName
+        {
+            get { return m_sCurrentLocationName; }
+            set { m_sCurrentLocationName = value; }
+        }
+
+        public int ResultCount
+        {
+            get { return m_iResultCount; }
+            set { m_iResultCount = value; }
+        }
+
+        public bool SearchCompleted
+        {
+            get { return m_bSearchCompleted; }
+            set { m_bSearchCompleted = value; }
+        }
+
+        public string HTMLSearchResults
+        {
+            get { return m_sHTMLSearchResults; }
+            set { m_sHTMLSearchResults = value; }
+        }
+  }
+
     #endregion
 }
 
